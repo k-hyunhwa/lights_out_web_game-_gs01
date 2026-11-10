@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Noto+Sans+KR:wght@400;500;700;900&family=Noto+Sans+SC:wght@500;700&display=swap" rel="stylesheet">
-  <!-- Canvas Confetti for Celebration -->
+  <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <style>
@@ -23,7 +23,6 @@
     .font-chakra {
       font-family: 'Chakra Petch', sans-serif;
     }
-    /* Neon glow effect for active lights */
     .light-on {
       background: radial-gradient(circle at 35% 35%, #fffb8f, #facc15 65%, #ca8a04);
       box-shadow: 0 0 16px rgba(250, 204, 21, 0.75), 0 0 32px rgba(234, 179, 8, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.85);
@@ -48,20 +47,35 @@
         outline-offset: 6px;
       }
     }
-    /* Fluid board container fitting mobile screens up to desktop */
     .puzzle-board-container {
-      width: min(92vw, 420px, calc(100vh - 360px));
-      height: min(92vw, 420px, calc(100vh - 360px));
-      min-width: 260px;
-      min-height: 260px;
+      width: min(90vw, 420px, calc(100vh - 360px));
+      height: min(90vw, 420px, calc(100vh - 360px));
+      min-width: 250px;
+      min-height: 250px;
+    }
+    /* 커스텀 스크롤바 */
+    .ranking-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .ranking-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    .ranking-scroll::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-between p-2 sm:p-4 md:p-6 overflow-x-hidden selection:bg-cyan-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-between p-2 sm:p-4 overflow-x-hidden selection:bg-cyan-500 selection:text-white">
 
-  <!-- 학생 정보 로그인/입장 초기 화면 모달 -->
+  <!-- 모바일 전용 랭킹 열기/닫기 토글 플로팅 버튼 -->
+  <button id="ranking-toggle-btn" onclick="toggleRankingDrawer()" class="xl:hidden fixed top-3 right-3 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black shadow-lg shadow-amber-500/30 transition transform active:scale-95 text-xs">
+    <span>🏆 순위표</span>
+  </button>
+
+  <!-- 학생 정보 모달 -->
   <div id="login-modal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
-    <div class="bg-slate-900 border-2 border-cyan-500/50 rounded-3xl max-w-sm w-full p-6 text-slate-200 shadow-2xl shadow-cyan-500/20 text-center">
+    <div class="bg-slate-900 border-2 border-cyan-500/50 rounded-3xl max-w-sm w-full p-6 text-slate-200 shadow-2xl text-center">
       <div class="inline-flex items-center gap-1.5 bg-cyan-950 border border-cyan-500/40 px-3 py-1 rounded-full text-xs font-semibold text-cyan-400 mb-3">
         <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
         <span>관산중학교 수학 퍼즐</span>
@@ -77,264 +91,239 @@
             <span>학번 (예: 20315)</span>
             <span class="text-[10px] text-slate-500 font-normal">Student ID</span>
           </label>
-          <input type="text" id="input-student-id" required placeholder="5자리 학번 입력" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 text-sm font-chakra tracking-wider">
+          <input type="text" id="input-student-id" required placeholder="5자리 학번 입력" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 text-sm font-chakra tracking-wider">
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1 flex items-center justify-between">
             <span>이름</span>
             <span class="text-[10px] text-slate-500 font-normal">Student Name</span>
           </label>
-          <input type="text" id="input-student-name" required placeholder="이름 입력" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 text-sm">
+          <input type="text" id="input-student-name" required placeholder="이름 입력" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 text-sm">
         </div>
         <p id="login-error-msg" class="text-xs text-rose-400 text-center font-medium min-h-[16px]"></p>
         <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold shadow-lg shadow-cyan-500/30 transition transform active:scale-95 text-sm flex items-center justify-center gap-1.5">
           <span>퍼즐 시작하기</span>
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
         </button>
       </form>
     </div>
   </div>
 
-  <!-- Top Toolbar: Student Info Badge, How-To Button on Left + Multi-language Selectors -->
-  <nav class="w-full max-w-xl flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 border border-slate-800 rounded-2xl px-3 py-2 shadow-lg mb-2">
-    <!-- 1. 학생 정보 뱃지 및 게임 방법 안내 버튼 -->
-    <div class="flex items-center gap-2 flex-wrap">
-      <!-- 학생 정보 표시 뱃지 -->
-      <div id="student-badge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 text-xs font-bold shadow">
-        <svg class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
-        </svg>
-        <span id="student-info-display">학번 이름</span>
-        <button onclick="changeStudentInfo()" title="정보 변경" class="text-[10px] ml-0.5 text-cyan-400/70 hover:text-cyan-200 underline">
-          변경
+  <!-- 메인 게임 컨테이너 (XL 화면에서 우측 랭킹 패널 폭 320px 공간 확보) -->
+  <div class="w-full flex flex-col items-center xl:mr-80 transition-all duration-300">
+    <!-- Top Toolbar -->
+    <nav class="w-full max-w-xl flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 border border-slate-800 rounded-2xl px-3 py-2 shadow-lg mb-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        <div id="student-badge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 text-xs font-bold shadow">
+          <svg class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+          <span id="student-info-display">학번 이름</span>
+          <button onclick="changeStudentInfo()" title="정보 변경" class="text-[10px] ml-0.5 text-cyan-400/70 hover:text-cyan-200 underline">변경</button>
+        </div>
+
+        <button onclick="openHowToModal()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/50 text-indigo-300 hover:text-white transition shadow active:scale-95 text-xs font-bold shrink-0">
+          <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span>게임 방법</span>
         </button>
       </div>
 
-      <!-- 게임 방법 버튼 -->
-      <button onclick="openHowToModal()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/50 text-indigo-300 hover:text-white transition shadow active:scale-95 text-xs font-bold shrink-0">
-        <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        <span>게임 방법</span>
-        <span class="text-[10px] font-normal text-indigo-400 hidden xs:inline" data-i18n="btn_rules">Rules</span>
-      </button>
-    </div>
+      <div class="flex items-center gap-1 sm:gap-1.5 flex-wrap ml-auto">
+        <button onclick="setLang('ko')" id="lang-ko" class="px-2 py-1 text-xs rounded-lg font-bold transition">한국어</button>
+        <button onclick="setLang('en')" id="lang-en" class="px-2 py-1 text-xs rounded-lg font-bold transition">+ English</button>
+        <button onclick="setLang('zh')" id="lang-zh" class="px-2 py-1 text-xs rounded-lg font-bold transition">+ 中文</button>
+        <button onclick="setLang('ru')" id="lang-ru" class="px-2 py-1 text-xs rounded-lg font-bold transition">+ Русский</button>
+      </div>
+    </nav>
 
-    <!-- 2. 다국어 선택 버튼 모음 -->
-    <div class="flex items-center gap-1 sm:gap-1.5 flex-wrap ml-auto">
-      <button onclick="setLang('ko')" id="lang-ko" class="px-2 py-1 text-xs rounded-lg font-bold transition">한국어</button>
-      <button onclick="setLang('en')" id="lang-en" class="px-2 py-1 text-xs rounded-lg font-bold transition">+ English</button>
-      <button onclick="setLang('zh')" id="lang-zh" class="px-2 py-1 text-xs rounded-lg font-bold transition">+ 中文</button>
-      <button onclick="setLang('ru')" id="lang-ru" class="px-2 py-1 text-xs rounded-lg font-bold transition">+ Русский</button>
-    </div>
-  </nav>
+    <!-- Header Section -->
+    <header class="w-full max-w-xl text-center py-1">
+      <div class="inline-flex items-center gap-1.5 bg-slate-900/90 border border-cyan-500/30 px-3 py-0.5 rounded-full text-[11px] font-medium text-cyan-400 mb-1">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+        <span id="school-title">관산중학교 수학 퍼즐 교실</span>
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-300 via-cyan-400 to-indigo-400 bg-clip-text text-transparent">
+        LIGHTS OUT
+      </h1>
+      <div class="mt-0.5 text-xs text-slate-400 flex flex-col items-center">
+        <div>모든 조명을 눌러서 <span class="text-amber-400 font-bold">소등</span>시키세요!</div>
+        <div id="sub-objective" class="text-[11px] text-slate-500 mt-0.5"></div>
+      </div>
+    </header>
 
-  <!-- Header Section -->
-  <header class="w-full max-w-xl text-center py-1 sm:py-2">
-    <div class="inline-flex items-center gap-1.5 bg-slate-900/90 border border-cyan-500/30 px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs md:text-sm font-medium text-cyan-400 mb-1.5 shadow-sm">
-      <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-      <span id="school-title">관산중학교 수학 퍼즐 교실</span>
-    </div>
-    <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-amber-300 via-cyan-400 to-indigo-400 bg-clip-text text-transparent">
-      LIGHTS OUT
-    </h1>
-    <div class="mt-0.5 text-xs sm:text-sm text-slate-400 flex flex-col items-center justify-center">
-      <div>모든 조명을 눌러서 <span class="text-amber-400 font-bold">소등</span>시키세요!</div>
-      <div id="sub-objective" class="text-[11px] sm:text-xs text-slate-500 mt-0.5"></div>
-    </div>
-  </header>
+    <!-- Control & Dashboard Panel -->
+    <main class="w-full max-w-md flex flex-col items-center gap-2.5 sm:gap-3 mt-1">
+      <!-- 난이도 카드 -->
+      <div class="w-full grid grid-cols-3 gap-1.5 sm:gap-2">
+        <div id="diff-card-3" class="flex flex-col items-center p-1.5 bg-slate-900/90 rounded-2xl border-2 border-cyan-500/80 shadow-lg transition">
+          <button onclick="changeDifficulty(3)" id="btn-diff-3" class="w-full py-1.5 px-0.5 text-xs sm:text-sm font-bold rounded-xl transition flex flex-col items-center justify-center bg-cyan-500 text-slate-950 shadow-md">
+            <span>3x3 (초급)</span>
+            <span class="text-[9px] font-normal opacity-90" data-i18n="diff_3_sub">Easy</span>
+          </button>
+          <div id="stage-dots-3" class="w-full flex items-center justify-between gap-0.5 mt-1.5 px-0.5"></div>
+        </div>
 
-  <!-- Control & Dashboard Panel -->
-  <main class="w-full max-w-md flex flex-col items-center gap-2.5 sm:gap-3">
-    
-    <!-- 3-Column Difficulty Cards with Dedicated 1~5 Stage Indicators -->
-    <div class="w-full grid grid-cols-3 gap-1.5 sm:gap-2">
-      
-      <!-- 초급 (3x3) Column -->
-      <div id="diff-card-3" class="flex flex-col items-center p-1.5 sm:p-2 bg-slate-900/90 rounded-2xl border-2 border-cyan-500/80 shadow-lg transition duration-200">
-        <button onclick="changeDifficulty(3)" id="btn-diff-3" class="w-full py-1.5 px-0.5 text-xs sm:text-sm font-bold rounded-xl transition duration-150 flex flex-col items-center justify-center bg-cyan-500 text-slate-950 shadow-md">
-          <span>3x3 (초급)</span>
-          <span class="text-[9px] sm:text-[10px] font-normal opacity-90" data-i18n="diff_3_sub">Easy</span>
-        </button>
-        <!-- Stage dots 1~5 for 3x3 -->
-        <div id="stage-dots-3" class="w-full flex items-center justify-between gap-0.5 sm:gap-1 mt-1.5 px-0.5">
-          <!-- Rendered dynamically -->
+        <div id="diff-card-4" class="flex flex-col items-center p-1.5 bg-slate-900/90 rounded-2xl border-2 border-slate-800 shadow-lg transition">
+          <button onclick="changeDifficulty(4)" id="btn-diff-4" class="w-full py-1.5 px-0.5 text-xs sm:text-sm font-bold rounded-xl transition flex flex-col items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800/80">
+            <span>4x4 (중급)</span>
+            <span class="text-[9px] font-normal opacity-75" data-i18n="diff_4_sub">Medium</span>
+          </button>
+          <div id="stage-dots-4" class="w-full flex items-center justify-between gap-0.5 mt-1.5 px-0.5"></div>
+        </div>
+
+        <div id="diff-card-5" class="flex flex-col items-center p-1.5 bg-slate-900/90 rounded-2xl border-2 border-slate-800 shadow-lg transition">
+          <button onclick="changeDifficulty(5)" id="btn-diff-5" class="w-full py-1.5 px-0.5 text-xs sm:text-sm font-bold rounded-xl transition flex flex-col items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800/80">
+            <span>5x5 (고급)</span>
+            <span class="text-[9px] font-normal opacity-75" data-i18n="diff_5_sub">Hard</span>
+          </button>
+          <div id="stage-dots-5" class="w-full flex items-center justify-between gap-0.5 mt-1.5 px-0.5"></div>
         </div>
       </div>
 
-      <!-- 중급 (4x4) Column -->
-      <div id="diff-card-4" class="flex flex-col items-center p-1.5 sm:p-2 bg-slate-900/90 rounded-2xl border-2 border-slate-800 shadow-lg transition duration-200">
-        <button onclick="changeDifficulty(4)" id="btn-diff-4" class="w-full py-1.5 px-0.5 text-xs sm:text-sm font-bold rounded-xl transition duration-150 flex flex-col items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800/80">
-          <span>4x4 (중급)</span>
-          <span class="text-[9px] sm:text-[10px] font-normal opacity-75" data-i18n="diff_4_sub">Medium</span>
-        </button>
-        <!-- Stage dots 1~5 for 4x4 -->
-        <div id="stage-dots-4" class="w-full flex items-center justify-between gap-0.5 sm:gap-1 mt-1.5 px-0.5">
-          <!-- Rendered dynamically -->
+      <!-- 정보 지표 -->
+      <div class="grid grid-cols-3 gap-1.5 sm:gap-2 w-full">
+        <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-1.5 text-center flex flex-col items-center justify-center shadow">
+          <span class="text-[10px] sm:text-[11px] font-semibold text-slate-400">이동 횟수</span>
+          <span class="text-[9px] text-slate-500" data-i18n="stat_moves">Moves</span>
+          <span id="move-count" class="font-chakra text-xl sm:text-2xl font-bold text-amber-400 mt-0.5">0</span>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-1.5 text-center flex flex-col items-center justify-center shadow">
+          <span class="text-[10px] sm:text-[11px] font-semibold text-slate-400">경과 시간</span>
+          <span class="text-[9px] text-slate-500" data-i18n="stat_time">Time</span>
+          <span id="timer-display" class="font-chakra text-xl sm:text-2xl font-bold text-cyan-400 mt-0.5">00:00</span>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-1.5 text-center flex flex-col items-center justify-center shadow">
+          <span class="text-[10px] sm:text-[11px] font-semibold text-slate-400">내 최고기록</span>
+          <span class="text-[9px] text-slate-500" data-i18n="stat_best">Best</span>
+          <span id="best-score" class="font-chakra text-lg sm:text-xl font-bold text-emerald-400 mt-0.5">-</span>
         </div>
       </div>
 
-      <!-- 고급 (5x5) Column -->
-      <div id="diff-card-5" class="flex flex-col items-center p-1.5 sm:p-2 bg-slate-900/90 rounded-2xl border-2 border-slate-800 shadow-lg transition duration-200">
-        <button onclick="changeDifficulty(5)" id="btn-diff-5" class="w-full py-1.5 px-0.5 text-xs sm:text-sm font-bold rounded-xl transition duration-150 flex flex-col items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800/80">
-          <span>5x5 (고급)</span>
-          <span class="text-[9px] sm:text-[10px] font-normal opacity-75" data-i18n="diff_5_sub">Hard</span>
-        </button>
-        <!-- Stage dots 1~5 for 5x5 -->
-        <div id="stage-dots-5" class="w-full flex items-center justify-between gap-0.5 sm:gap-1 mt-1.5 px-0.5">
-          <!-- Rendered dynamically -->
+      <!-- 보드 영역 -->
+      <div class="relative puzzle-board-container p-2.5 sm:p-3.5 bg-slate-900/90 rounded-3xl border-2 border-slate-800 shadow-2xl flex items-center justify-center backdrop-blur-md">
+        <div id="game-board" class="w-full h-full grid gap-1.5 sm:gap-2.5 p-0.5"></div>
+
+        <div id="win-overlay" class="absolute inset-0 bg-slate-950/95 rounded-3xl backdrop-blur-md flex flex-col items-center justify-center p-4 text-center opacity-0 pointer-events-none transition duration-300 transform scale-95 z-20">
+          <div class="w-12 h-12 rounded-full bg-amber-400/20 text-amber-400 flex items-center justify-center mb-2 animate-bounce">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+          </div>
+          <h2 id="win-title" class="text-xl font-extrabold text-white">스테이지 클리어!</h2>
+          <div class="text-xs text-amber-300 mb-1.5 font-medium" data-i18n="win_congrats">Stage Cleared!</div>
+          <p class="text-xs text-slate-300 mb-1" id="win-summary"></p>
+          <p id="ranking-upload-status" class="text-[11px] text-cyan-400 mb-3 font-semibold"></p>
+          <button onclick="handleNextStageClick()" id="btn-next-action" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold shadow-lg shadow-cyan-500/30 transition transform active:scale-95 flex flex-col items-center">
+            <span id="next-action-title" class="text-xs sm:text-sm">다음 스테이지</span>
+          </button>
         </div>
       </div>
 
-    </div>
-
-    <!-- Status Indicators (Moves, Time, Best) -->
-    <div class="grid grid-cols-3 gap-1.5 sm:gap-2 w-full">
-      <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-1.5 sm:p-2 text-center flex flex-col items-center justify-center shadow-lg">
-        <span class="text-[10px] sm:text-[11px] font-semibold text-slate-400">이동 횟수</span>
-        <span class="text-[9px] sm:text-[10px] text-slate-500" data-i18n="stat_moves">Moves</span>
-        <span id="move-count" class="font-chakra text-xl sm:text-2xl font-bold text-amber-400 mt-0.5">0</span>
-      </div>
-      <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-1.5 sm:p-2 text-center flex flex-col items-center justify-center shadow-lg">
-        <span class="text-[10px] sm:text-[11px] font-semibold text-slate-400">경과 시간</span>
-        <span class="text-[9px] sm:text-[10px] text-slate-500" data-i18n="stat_time">Time</span>
-        <span id="timer-display" class="font-chakra text-xl sm:text-2xl font-bold text-cyan-400 mt-0.5">00:00</span>
-      </div>
-      <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-1.5 sm:p-2 text-center flex flex-col items-center justify-center shadow-lg">
-        <span class="text-[10px] sm:text-[11px] font-semibold text-slate-400">최고 기록</span>
-        <span class="text-[9px] sm:text-[10px] text-slate-500" data-i18n="stat_best">Best</span>
-        <span id="best-score" class="font-chakra text-lg sm:text-xl font-bold text-emerald-400 mt-0.5">-</span>
-      </div>
-    </div>
-
-    <!-- Interactive Puzzle Board Area (Fluid & Responsive Container) -->
-    <div class="relative puzzle-board-container p-2.5 sm:p-3.5 bg-slate-900/90 rounded-3xl border-2 border-slate-800 shadow-2xl flex items-center justify-center backdrop-blur-md">
-      <div id="game-board" class="w-full h-full grid gap-1.5 sm:gap-2.5 p-0.5">
-        <!-- Cells generated via JavaScript -->
+      <!-- 제어 버튼 -->
+      <div class="grid grid-cols-3 gap-2 w-full">
+        <button id="btn-hint" onclick="giveHint()" class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-700/60 text-cyan-300 transition shadow active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
+          <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <span id="hint-btn-main" class="text-xs font-bold">힌트</span>
+        </button>
+        <button onclick="restartLevel()" class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-slate-800/90 hover:bg-slate-700/80 border border-slate-700 text-slate-300 transition shadow active:scale-95">
+          <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span class="text-xs font-bold">재시도</span>
+        </button>
+        <button onclick="resetCurrentStagePattern()" class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-amber-950/60 hover:bg-amber-900/60 border border-amber-700/60 text-amber-300 transition shadow active:scale-95">
+          <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          <span class="text-xs font-bold">새 문제</span>
+        </button>
       </div>
 
-      <!-- Victory Overlay Card -->
-      <div id="win-overlay" class="absolute inset-0 bg-slate-950/95 rounded-3xl backdrop-blur-md flex flex-col items-center justify-center p-4 sm:p-6 text-center opacity-0 pointer-events-none transition duration-300 transform scale-95 z-20">
-        <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-amber-400/20 text-amber-400 flex items-center justify-center mb-2 animate-bounce">
-          <svg class="w-7 h-7 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
-          </svg>
+      <div id="hint-banner" class="text-xs text-cyan-400 font-medium h-5 text-center flex items-center justify-center px-2"></div>
+    </main>
+
+    <footer class="w-full text-center text-slate-500 text-xs py-3 max-w-lg">
+      <div id="footer-tip-ko">💡 같은 칸을 2번 누르면 원래대로 돌아옵니다 (순서 무관).</div>
+      <div id="footer-tip-sub" class="text-[11px] text-slate-600 mt-0.5"></div>
+    </footer>
+  </div>
+
+  <!-- 우측 실시간 랭킹 순위표 슬라이드 패널 -->
+  <aside id="ranking-panel" class="fixed top-0 right-0 bottom-0 w-80 max-w-[85vw] bg-slate-900/95 border-l border-slate-800 shadow-2xl backdrop-blur-xl z-40 transform translate-x-full xl:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col p-4">
+    <!-- 헤더 -->
+    <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+      <div class="flex items-center gap-2">
+        <span class="text-lg">🏆</span>
+        <div>
+          <h2 class="text-sm font-black text-white flex items-center gap-1.5">
+            <span>실시간 순위표</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">TOP 40</span>
+          </h2>
+          <p id="ranking-stage-label" class="text-[11px] text-amber-400 font-semibold font-chakra">3x3 - Stage 1</p>
         </div>
-        <h2 id="win-title" class="text-xl sm:text-2xl font-extrabold text-white">스테이지 클리어!</h2>
-        <div class="text-xs text-amber-300 mb-2 font-medium" data-i18n="win_congrats">Stage Cleared! Congratulations!</div>
-        <p class="text-xs sm:text-sm text-slate-300 mb-4" id="win-summary">총 12수 / 00:34 소요</p>
-        <button onclick="handleNextStageClick()" id="btn-next-action" class="px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold shadow-lg shadow-cyan-500/30 transition transform active:scale-95 flex flex-col items-center">
-          <span id="next-action-title" class="text-xs sm:text-sm">다음 스테이지 (2/5)</span>
-          <span class="text-[10px] sm:text-[11px] font-normal text-cyan-100" data-i18n="btn_next_level">Next Stage</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <button onclick="fetchLeaderboard()" title="새로고침" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">
+          <svg id="ranking-refresh-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        </button>
+        <button onclick="toggleRankingDrawer()" class="xl:hidden p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
     </div>
 
-    <!-- Navigation Action Buttons (힌트 / 재시도 / 새 문제) -->
-    <div class="grid grid-cols-3 gap-2 w-full">
-      <button id="btn-hint" onclick="giveHint()" class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-700/60 text-cyan-300 transition shadow active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
-        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        <span id="hint-btn-main" class="text-xs font-bold leading-tight">힌트</span>
-        <span id="hint-btn-sub" class="text-[10px] text-cyan-400 font-normal leading-tight">Hint</span>
-      </button>
-
-      <button onclick="restartLevel()" class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-slate-800/90 hover:bg-slate-700/80 border border-slate-700 text-slate-300 transition shadow active:scale-95">
-        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-        <span class="text-xs font-bold">재시도</span>
-        <span class="text-[10px] text-slate-400 font-normal" data-i18n="btn_retry">Retry</span>
-      </button>
-
-      <button onclick="resetCurrentStagePattern()" class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-amber-950/60 hover:bg-amber-900/60 border border-amber-700/60 text-amber-300 transition shadow active:scale-95">
-        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-        <span class="text-xs font-bold">새 문제</span>
-        <span class="text-[10px] text-amber-400 font-normal" data-i18n="btn_new">Re-roll</span>
-      </button>
+    <!-- 순위 리스트 테이블 -->
+    <div class="flex-1 overflow-y-auto ranking-scroll mt-2 pr-1">
+      <table class="w-full text-left text-xs">
+        <thead class="sticky top-0 bg-slate-900 text-slate-400 border-b border-slate-800 text-[10px]">
+          <tr>
+            <th class="py-1.5 px-1 w-10 text-center">순위</th>
+            <th class="py-1.5 px-2">학생</th>
+            <th class="py-1.5 px-1.5 text-center">횟수</th>
+            <th class="py-1.5 px-1 text-right">시간</th>
+          </tr>
+        </thead>
+        <tbody id="ranking-table-body" class="divide-y divide-slate-800/60 font-chakra">
+          <tr>
+            <td colspan="4" class="py-8 text-center text-slate-500 font-sans text-xs">순위를 불러오는 중...</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <!-- Dynamic Hint Banner -->
-    <div id="hint-banner" class="text-xs text-cyan-400 font-medium h-5 text-center flex items-center justify-center px-2"></div>
+    <!-- 푸터 팁 -->
+    <div class="pt-2.5 mt-2 border-t border-slate-800 text-[10px] text-slate-500 text-center shrink-0">
+      * 1순위: 적은 이동 횟수 / 2순위: 빠른 시간
+    </div>
+  </aside>
 
-  </main>
+  <!-- 모바일 딤 오버레이 -->
+  <div id="ranking-backdrop" onclick="toggleRankingDrawer()" class="xl:hidden fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-30 opacity-0 pointer-events-none transition-opacity duration-300"></div>
 
-  <!-- Footer Info -->
-  <footer class="w-full text-center text-slate-500 text-xs py-3 max-w-lg">
-    <div id="footer-tip-ko">💡 같은 칸을 2번 누르면 원래대로 돌아옵니다 (순서 무관).</div>
-    <div id="footer-tip-sub" class="text-[11px] text-slate-600 mt-0.5"></div>
-  </footer>
-
-  <!-- How to Play Guide Modal (게임 방법 안내 창) -->
+  <!-- How-To Guide Modal 생략 없이 포함 -->
   <div id="howto-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition duration-200">
     <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-6 text-slate-200 shadow-2xl relative max-h-[90vh] overflow-y-auto">
       <button onclick="closeHowToModal()" class="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
-
       <div class="flex items-center gap-2 mb-4">
         <div class="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xl">💡</div>
         <div>
           <h3 class="text-xl font-bold text-white leading-tight">게임 방법 안내</h3>
-          <p class="text-xs text-indigo-300" data-i18n="modal_subtitle">Rules & Strategy Guide</p>
         </div>
       </div>
-
-      <div class="space-y-3.5 text-sm">
-        <!-- 1. 목표 -->
-        <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/60">
-          <div class="font-bold text-amber-400 flex items-center justify-between">
-            <span>1. 게임 목표</span>
-            <span class="text-xs font-normal text-amber-300/80" data-i18n="rule_target_title">Game Goal</span>
-          </div>
-          <p class="text-xs md:text-sm mt-1.5 text-slate-200 leading-relaxed">
-            보드에 켜져 있는 <strong class="text-amber-300">노란색 불을 모두 꺼서</strong> 어두운 상태로 만드는 퍼즐입니다.
-          </p>
-          <p class="text-xs text-slate-400 mt-1 leading-normal" data-i18n="rule_target_desc">
-            The goal is to turn off all the yellow lights on the board until everything is completely dark.
-          </p>
+      <div class="space-y-3 text-xs md:text-sm">
+        <div class="bg-slate-800/60 p-3 rounded-2xl border border-slate-700/60">
+          <div class="font-bold text-amber-400">1. 게임 목표</div>
+          <p class="mt-1 text-slate-300">보드에 켜져 있는 노란색 불을 모두 꺼서 검은색으로 소등시키는 퍼즐입니다.</p>
         </div>
-
-        <!-- 2. 작동 방식 -->
-        <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/60">
-          <div class="font-bold text-cyan-400 flex items-center justify-between">
-            <span>2. 불이 바뀌는 규칙 (십자 반전)</span>
-            <span class="text-xs font-normal text-cyan-300/80" data-i18n="rule_flip_title">Toggle Rule</span>
-          </div>
-          <p class="text-xs md:text-sm mt-1.5 text-slate-200 leading-relaxed">
-            임의의 칸을 누르면 <strong class="text-cyan-300">누른 칸과 상·하·좌·우에 붙어 있는 4개 칸의 불이 함께 반전</strong>(ON ↔ OFF)됩니다.
-          </p>
-          <p class="text-xs text-slate-400 mt-1 leading-normal" data-i18n="rule_flip_desc">
-            Clicking a cell will toggle that cell and its 4 adjacent neighbors (Up, Down, Left, Right) between ON and OFF.
-          </p>
-        </div>
-
-        <!-- 3. 공략 팁 & 수학 원리 -->
-        <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/60">
-          <div class="font-bold text-emerald-400 flex items-center justify-between">
-            <span>3. 해결 팁 (수학적 원리)</span>
-            <span class="text-xs font-normal text-emerald-300/80" data-i18n="rule_math_title">Strategy & Math</span>
-          </div>
-          <ul class="list-disc list-inside space-y-1.5 mt-2 text-xs md:text-sm text-slate-300 leading-relaxed">
-            <li>
-              <strong>2번 누르면 제자리 (XOR 논리):</strong> 같은 버튼을 두 번 누르는 것은 안 누른 것과 같습니다. 각 칸은 최대 1번만 누르면 됩니다.
-              <div class="text-xs text-slate-400 ml-4" data-i18n="rule_xor_desc">Clicking the same cell twice cancels out. Every cell only needs to be clicked 0 or 1 time.</div>
-            </li>
-            <li>
-              <strong>체이싱 기법 (Light Chasing):</strong> 맨 윗줄에 켜진 불을 끄기 위해 바로 아랫줄 칸을 누르며 위에서부터 차례대로 불을 지워 내려가 보세요!
-              <div class="text-xs text-slate-400 ml-4" data-i18n="rule_chasing_desc">Solve row by row from top to bottom by clicking the light directly beneath an active light.</div>
-            </li>
-          </ul>
+        <div class="bg-slate-800/60 p-3 rounded-2xl border border-slate-700/60">
+          <div class="font-bold text-cyan-400">2. 불이 바뀌는 규칙</div>
+          <p class="mt-1 text-slate-300">칸을 누르면 자신과 상·하·좌·우 4칸이 함께 ON/OFF 반전됩니다.</p>
         </div>
       </div>
-
-      <button onclick="closeHowToModal()" class="w-full mt-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition shadow-lg shadow-cyan-600/30 flex flex-col items-center">
-        <span>이해했습니다! 게임 시작</span>
-        <span class="text-[11px] font-normal opacity-90" data-i18n="modal_close_btn">Got it! Let's Play</span>
-      </button>
+      <button onclick="closeHowToModal()" class="w-full mt-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold">이해했습니다</button>
     </div>
   </div>
 
-  <!-- JavaScript Game Engine & Multilingual System -->
   <script>
-    // Multilingual Translations Dictionary
+    /* ====================================================================
+       1. 구글 스프레드시트 연동 설정 (배포한 Web App URL을 입력하세요)
+       ==================================================================== */
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzywA1fSbEzE44jK9ma8K8aFQbS3jkYt5B-qE1NclHEty8PDo-pS-hAhPpfLmAnRTsPwg/exec"; // 예: https://script.google.com/macros/s/AKfycby.../exec
+
+    // Multilingual Translations
     const translations = {
       en: {
         school: "Gwansan Middle School Math Club",
@@ -345,24 +334,13 @@
         stat_moves: "Moves",
         stat_time: "Time",
         stat_best: "Best",
-        btn_rules: "How to Play",
+        btn_rules: "Rules",
         btn_hint: "Hint",
         btn_retry: "Retry",
         btn_new: "Re-roll",
         btn_next_level: "Next Stage",
         win_congrats: "Stage Cleared! Well done!",
-        modal_subtitle: "How to Play & Math Tips",
-        rule_target_title: "Game Goal",
-        rule_target_desc: "The goal is to turn off all the lights on the board until complete darkness.",
-        rule_flip_title: "Toggle Rule",
-        rule_flip_desc: "Clicking a cell toggles itself and its 4 adjacent neighbors (Up, Down, Left, Right).",
-        rule_math_title: "Strategy & Math",
-        rule_xor_desc: "Clicking a cell twice cancels out. Each cell should only be clicked at most once.",
-        rule_chasing_desc: "Try Light Chasing: clear top-row lights by clicking the cell directly below them.",
-        modal_close_btn: "Got it! Let's Play",
-        footer_tip: "Clicking the same cell twice returns it to previous state.",
-        hint_text: (r, c) => `💡 Recommended: Click Row ${r}, Col ${c}!`,
-        win_summary_fmt: (m, t) => `Total ${m} moves / ${t} taken`
+        footer_tip: "Clicking twice returns cell to original state."
       },
       zh: {
         school: "冠山中学校 数学俱乐部",
@@ -379,21 +357,10 @@
         btn_new: "重置题目",
         btn_next_level: "下一关",
         win_congrats: "恭喜过关！太棒了！",
-        modal_subtitle: "玩法规则与数学原理",
-        rule_target_title: "游戏目标",
-        rule_target_desc: "通过点击按键，熄灭棋盘上所有的黄色灯光。",
-        rule_flip_title: "十字反转规则",
-        rule_flip_desc: "点击任意一格，该格与其上下左右相邻的格子状态都会反转（亮变暗，暗变亮）。",
-        rule_math_title: "通关技巧与数学原理",
-        rule_xor_desc: "按两次等于没按（异或运算），每个格子最多只需要按1次即可。",
-        rule_chasing_desc: "逐行推导法：按下方的格子来熄灭上一行亮着的灯，从上往下依次熄灭。",
-        modal_close_btn: "我明白了！开始游戏",
-        footer_tip: "任何格子按两次都会还原，与按下的先后顺序无关。",
-        hint_text: (r, c) => `💡 推荐步骤：点击 第${r}行, 第${c}列！`,
-        win_summary_fmt: (m, t) => `共 ${m} 步 / 耗时 ${t}`
+        footer_tip: "任何格子按两次都会还原。"
       },
       ru: {
-        school: "Средняя школа Квансан - Математический клуб",
+        school: "Средняя школа Квансан",
         subObjective: "Погасите все огни на игровом поле!",
         diff_3_sub: "Легко",
         diff_4_sub: "Средне",
@@ -406,38 +373,18 @@
         btn_retry: "Заново",
         btn_new: "Сменить",
         btn_next_level: "След. этап",
-        win_congrats: "Уровень пройден! Поздравляем!",
-        modal_subtitle: "Правила и математические подсказки",
-        rule_target_title: "Цель игры",
-        rule_target_desc: "Погасить все горящие желтые огни на игровом поле.",
-        rule_flip_title: "Правило переключения",
-        rule_flip_desc: "Нажатие на клетку меняет состояние её самой и 4 соседних клеток (крестом).",
-        rule_math_title: "Стра테гия и логика",
-        rule_xor_desc: "Двойное нажатие отменяет действие. Каждую клетку нужно нажимать максимум один раз.",
-        rule_chasing_desc: "Погоня за огнями: гасите верхний ряд, нажимая на клетки прямо под ним.",
-        modal_close_btn: "Понятно! Начать игру",
-        footer_tip: "Повторное нажатие на клетку возвращает ее в исходное состояние.",
-        hint_text: (r, c) => `💡 Совет: нажмите (ряд ${r}, колонка ${c})!`,
-        win_summary_fmt: (m, t) => `Всего ходов: ${m} / Время: ${t}`
+        win_congrats: "Уровень пройден!",
+        footer_tip: "Повторное нажатие отменяет действие."
       }
     };
 
-    // Current State
-    let currentLang = 'en';
-    let size = 3; // 3, 4, 5
-    let currentStage = 1; // 1 to 5
+    let currentLang = 'ko';
+    let size = 3;
+    let currentStage = 1;
     const TOTAL_STAGES = 5;
 
-    // Student Information State
-    let studentInfo = {
-      id: '',
-      name: ''
-    };
-
-    // Hint Limit Control: Unlimited for 3x3, Max 3 for 4x4 and 5x5
+    let studentInfo = { id: '', name: '' };
     let remainingHints = 3;
-
-    // Preserved stage data per difficulty: { 3: [5 stages], 4: [...], 5: [...] }
     const stageData = { 3: [], 4: [], 5: [] };
 
     let board = [];
@@ -489,21 +436,133 @@
             nOsc.start(now + idx * 0.1);
             nOsc.stop(now + idx * 0.1 + 0.35);
           });
-        } else if (type === 'reset') {
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(320, now);
-          osc.frequency.linearRampToValueAtTime(160, now + 0.12);
-          gain.gain.setValueAtTime(0.15, now);
-          gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
-          osc.start(now);
-          osc.stop(now + 0.12);
         }
-      } catch (e) {
-        // Audio error suppression
+      } catch (e) {}
+    }
+
+    /* -------------------------------------------------------------
+       슬라이드 패널 토글 & 구글 스프레드시트 랭킹 연동 로직
+       ------------------------------------------------------------- */
+    let isDrawerOpen = false;
+    function toggleRankingDrawer() {
+      const panel = document.getElementById('ranking-panel');
+      const backdrop = document.getElementById('ranking-backdrop');
+      isDrawerOpen = !isDrawerOpen;
+
+      if (isDrawerOpen) {
+        panel.classList.remove('translate-x-full');
+        backdrop.classList.remove('opacity-0', 'pointer-events-none');
+        backdrop.classList.add('opacity-100', 'pointer-events-auto');
+      } else {
+        panel.classList.add('translate-x-full');
+        backdrop.classList.remove('opacity-100', 'pointer-events-auto');
+        backdrop.classList.add('opacity-0', 'pointer-events-none');
       }
     }
 
-    // Storage progress helpers
+    // 상위 40위 랭킹 불러오기
+    async function fetchLeaderboard() {
+      const label = document.getElementById('ranking-stage-label');
+      const tbody = document.getElementById('ranking-table-body');
+      const refreshIcon = document.getElementById('ranking-refresh-icon');
+
+      label.textContent = `${size}x${size} - Stage ${currentStage}`;
+      if (refreshIcon) refreshIcon.classList.add('animate-spin');
+
+      if (!GAS_API_URL || GAS_API_URL.includes("여기에_")) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-500 font-sans">구글 앱스스크립트 URL이<br>설정되지 않았습니다.</td></tr>`;
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${GAS_API_URL}?diff=${size}&stage=${currentStage}`, {
+          method: 'GET',
+          mode: 'cors'
+        });
+        const data = await response.json();
+
+        if (!data || data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-500 font-sans">아직 등록된 기록이 없습니다.<br>첫 클리어에 도전하세요!</td></tr>`;
+        } else {
+          tbody.innerHTML = data.map((item, idx) => {
+            const rank = idx + 1;
+            let rankBadge = `<span class="text-slate-400 font-semibold">${rank}</span>`;
+            let rowHighlight = "";
+
+            if (rank === 1) {
+              rankBadge = `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-400 text-slate-950 font-black text-[11px]">1</span>`;
+              rowHighlight = "bg-amber-500/10";
+            } else if (rank === 2) {
+              rankBadge = `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-300 text-slate-950 font-black text-[11px]">2</span>`;
+              rowHighlight = "bg-slate-400/10";
+            } else if (rank === 3) {
+              rankBadge = `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-700 text-white font-black text-[11px]">3</span>`;
+              rowHighlight = "bg-amber-900/10";
+            }
+
+            const isMe = (studentInfo.id && item.studentId === studentInfo.id);
+            if (isMe) rowHighlight += " ring-1 ring-cyan-400 bg-cyan-950/40";
+
+            const timeFormatted = `${String(Math.floor(item.time / 60)).padStart(2, '0')}:${String(item.time % 60).padStart(2, '0')}`;
+
+            return `
+              <tr class="${rowHighlight} hover:bg-slate-800/50 transition">
+                <td class="py-2 px-1 text-center">${rankBadge}</td>
+                <td class="py-2 px-2">
+                  <div class="font-sans font-bold text-slate-200 truncate max-w-[90px]">${item.name}</div>
+                  <div class="text-[9px] text-slate-500">${item.studentId}</div>
+                </td>
+                <td class="py-2 px-1.5 text-center font-bold text-amber-400">${item.moves}회</td>
+                <td class="py-2 px-1 text-right text-slate-300">${timeFormatted}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-rose-400 font-sans">랭킹 로딩 실패<br><span class="text-[10px] text-slate-500">${err.message}</span></td></tr>`;
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+      }
+    }
+
+    // 클리어 기록 스프레드시트에 전송
+    async function submitScoreToSheet() {
+      const statusEl = document.getElementById('ranking-upload-status');
+      if (!GAS_API_URL || GAS_API_URL.includes("여기에_")) {
+        if (statusEl) statusEl.textContent = "※ 온라인 랭킹 URL 미설정 (오프라인 모드)";
+        return;
+      }
+
+      if (statusEl) statusEl.textContent = "⏳ 실시간 랭킹 기록 등록 중...";
+
+      try {
+        const payload = {
+          diff: size,
+          stage: currentStage,
+          studentId: studentInfo.id || "비회원",
+          name: studentInfo.name || "익명",
+          moves: moves,
+          time: timer
+        };
+
+        await fetch(GAS_API_URL, {
+          method: 'POST',
+          mode: 'no-cors', // Apps Script POST 표준 통신
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (statusEl) statusEl.textContent = "✅ 랭킹 순위표에 기록되었습니다!";
+        fetchLeaderboard(); // 랭킹 자동 새로고침
+      } catch (err) {
+        if (statusEl) statusEl.textContent = "⚠️ 기록 등록 실패 (네트워크 확인)";
+      }
+    }
+
+    /* -------------------------------------------------------------
+       게임 핵심 로직 (퍼즐 생성, 렌더링, 이벤트)
+       ------------------------------------------------------------- */
     function getClearedStages(s) {
       const saved = localStorage.getItem(`lightsout_cleared_${s}x${s}`);
       return saved ? JSON.parse(saved) : [];
@@ -518,7 +577,6 @@
       renderStageDots();
     }
 
-    // Render Stage Dots under each difficulty button (초급, 중급, 고급 각각 5개씩 총 15개)
     function renderStageDots() {
       [3, 4, 5].forEach(s => {
         const container = document.getElementById(`stage-dots-${s}`);
@@ -536,24 +594,17 @@
             selectDifficultyAndStage(s, i);
           };
           dotBtn.title = `${s}x${s} - Stage ${i}`;
-
-          // Responsive sizing to fit nicely within each column
-          dotBtn.className = `flex-1 h-5 sm:h-6 max-w-[28px] rounded-full flex items-center justify-center font-bold text-[10px] sm:text-xs transition-all duration-200 cursor-pointer ${
-            isCurrent
-              ? 'ring-2 ring-cyan-400 ring-offset-1 ring-offset-slate-900 scale-105 z-10 '
-              : 'hover:scale-105 '
+          dotBtn.className = `flex-1 h-5 sm:h-6 max-w-[28px] rounded-full flex items-center justify-center font-bold text-[10px] transition cursor-pointer ${
+            isCurrent ? 'ring-2 ring-cyan-400 ring-offset-1 ring-offset-slate-900 scale-105 z-10 ' : 'hover:scale-105 '
           }${
-            isCleared
-              ? 'bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-md shadow-emerald-500/40'
-              : isCurrent
-                ? 'bg-cyan-900/80 text-cyan-200 border border-cyan-400/60'
-                : 'bg-slate-800/90 text-slate-500 border border-slate-700/60 hover:text-slate-300 hover:border-slate-500'
+            isCleared ? 'bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-md shadow-emerald-500/40' :
+            isCurrent ? 'bg-cyan-900/80 text-cyan-200 border border-cyan-400/60' :
+            'bg-slate-800/90 text-slate-500 border border-slate-700/60 hover:text-slate-300'
           }`;
 
           dotBtn.innerHTML = isCleared ? `
-            <svg class="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-950 font-black stroke-[3.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
-            </svg>` : i;
+            <svg class="w-2.5 h-2.5 text-slate-950 stroke-[3.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+          ` : i;
 
           container.appendChild(dotBtn);
         }
@@ -575,12 +626,20 @@
       loadStage(size, currentStage);
     }
 
-    // Create a solvable puzzle data structure
+    function toggleCellState(grid, r, c, boardSize = size) {
+      const dirs = [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]];
+      dirs.forEach(([dr, dc]) => {
+        const nr = r + dr;
+        const nc = c + dc;
+        if (nr >= 0 && nr < boardSize && nc >= 0 && nc < boardSize) {
+          grid[nr][nc] = !grid[nr][nc];
+        }
+      });
+    }
+
     function createPuzzle(s, stageIdx) {
       const pBoard = Array.from({ length: s }, () => Array(s).fill(false));
       const pSolution = Array.from({ length: s }, () => Array(s).fill(false));
-
-      // Gradual difficulty scaling per stage
       const baseSteps = s === 3 ? 3 : (s === 4 ? 5 : 7);
       const steps = baseSteps + stageIdx;
       let clicksDone = 0;
@@ -623,8 +682,6 @@
 
       moves = 0;
       document.getElementById('move-count').textContent = moves;
-
-      // Reset hints for the stage (3 for intermediate/advanced)
       remainingHints = (s === 3) ? Infinity : 3;
       updateHintButtonUI();
 
@@ -635,66 +692,16 @@
       startTimer();
       isGameActive = true;
       loadBestScore();
+      
+      // 스테이지 변경 시 해당 스테이지 랭킹 새로 로드
+      fetchLeaderboard();
     }
 
     function resetCurrentStagePattern() {
-      // Re-roll current stage pattern if desired
       stageData[size][currentStage - 1] = createPuzzle(size, currentStage - 1);
       loadStage(size, currentStage);
     }
 
-    // Toggle Cell Logic
-    function toggleCellState(grid, r, c, boardSize = size) {
-      const dirs = [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]];
-      dirs.forEach(([dr, dc]) => {
-        const nr = r + dr;
-        const nc = c + dc;
-        if (nr >= 0 && nr < boardSize && nc >= 0 && nc < boardSize) {
-          grid[nr][nc] = !grid[nr][nc];
-        }
-      });
-    }
-
-    // Set Language & update all bilingual text tags
-    function setLang(lang) {
-      currentLang = lang;
-      
-      ['ko', 'en', 'zh', 'ru'].forEach(l => {
-        const btn = document.getElementById(`lang-${l}`);
-        if (l === lang) {
-          btn.className = "px-2.5 py-1 text-xs rounded-lg font-bold transition bg-cyan-500 text-slate-950 shadow";
-        } else {
-          btn.className = "px-2.5 py-1 text-xs rounded-lg font-bold transition text-slate-400 hover:text-white hover:bg-slate-800";
-        }
-      });
-
-      const subObj = document.getElementById('sub-objective');
-      const footerSub = document.getElementById('footer-tip-sub');
-
-      if (lang === 'ko') {
-        subObj.textContent = '';
-        footerSub.textContent = '';
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-          el.style.display = 'none';
-        });
-      } else {
-        const dict = translations[lang];
-        subObj.textContent = dict.subObjective;
-        footerSub.textContent = dict.footer_tip;
-
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-          el.style.display = '';
-          const key = el.getAttribute('data-i18n');
-          if (dict[key]) {
-            el.textContent = dict[key];
-          }
-        });
-      }
-
-      updateHintButtonUI();
-    }
-
-    // Timer helpers
     function startTimer() {
       clearInterval(timerInterval);
       timer = 0;
@@ -719,7 +726,6 @@
       document.getElementById('timer-display').textContent = getFormattedTime();
     }
 
-    // Change Board Size
     function changeDifficulty(newSize) {
       size = newSize;
       currentStage = 1;
@@ -732,16 +738,15 @@
         const card = document.getElementById(`diff-card-${s}`);
         const btn = document.getElementById(`btn-diff-${s}`);
         if (s === selectedSize) {
-          card.className = "flex flex-col items-center p-1.5 sm:p-2 bg-slate-900/90 rounded-2xl border-2 border-cyan-500/80 shadow-lg shadow-cyan-500/10 transition duration-200";
-          btn.className = "w-full py-1.5 px-0.5 text-xs sm:text-sm font-bold rounded-xl transition duration-150 flex flex-col items-center justify-center bg-cyan-500 text-slate-950 shadow-md";
+          card.className = "flex flex-col items-center p-1.5 bg-slate-900/90 rounded-2xl border-2 border-cyan-500/80 shadow-lg transition duration-200";
+          btn.className = "w-full py-1.5 px-0.5 text-xs sm:text-sm font-bold rounded-xl transition flex flex-col items-center justify-center bg-cyan-500 text-slate-950 shadow-md";
         } else {
-          card.className = "flex flex-col items-center p-1.5 sm:p-2 bg-slate-900/90 rounded-2xl border-2 border-slate-800 shadow-lg transition duration-200";
-          btn.className = "w-full py-1.5 px-0.5 text-xs sm:text-sm font-bold rounded-xl transition duration-150 flex flex-col items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800/80";
+          card.className = "flex flex-col items-center p-1.5 bg-slate-900/90 rounded-2xl border-2 border-slate-800 shadow-lg transition duration-200";
+          btn.className = "w-full py-1.5 px-0.5 text-xs sm:text-sm font-bold rounded-xl transition flex flex-col items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800/80";
         }
       });
     }
 
-    // Render Board Grid
     function renderBoard() {
       const container = document.getElementById('game-board');
       container.innerHTML = '';
@@ -762,16 +767,13 @@
       }
     }
 
-    // User Click Event
     function handleCellClick(r, c) {
       if (!isGameActive) return;
-
       playSound('click');
       clearHint();
 
       toggleCellState(board, r, c);
       solutionClicks[r][c] = !solutionClicks[r][c];
-
       moves++;
       document.getElementById('move-count').textContent = moves;
 
@@ -779,7 +781,6 @@
       checkWin();
     }
 
-    // Check Victory
     function checkWin() {
       const hasLightOn = board.some(row => row.some(cell => cell === true));
       if (!hasLightOn) {
@@ -795,11 +796,7 @@
         saveBestScore();
 
         const formattedTime = getFormattedTime();
-        let summary = `스테이지 ${currentStage} 완료: 총 ${moves}수 / ${formattedTime} 소요`;
-        if (currentLang !== 'ko' && translations[currentLang]) {
-          summary += ` (${translations[currentLang].win_summary_fmt(moves, formattedTime)})`;
-        }
-        document.getElementById('win-summary').textContent = summary;
+        document.getElementById('win-summary').textContent = `스테이지 ${currentStage} 완료: 총 ${moves}수 / ${formattedTime} 소요`;
 
         const nextActionTitle = document.getElementById('next-action-title');
         const winTitle = document.getElementById('win-title');
@@ -808,13 +805,16 @@
           winTitle.textContent = `스테이지 ${currentStage} 클리어!`;
           nextActionTitle.textContent = `다음 스테이지 (${currentStage + 1}/${TOTAL_STAGES})`;
         } else {
-          winTitle.textContent = `🎉 ${size}x${size} 모든 스테이지 정복!`;
+          winTitle.textContent = `🎉 ${size}x${size} 전 스테이지 완료!`;
           nextActionTitle.textContent = `1단계로 돌아가기`;
         }
 
         const overlay = document.getElementById('win-overlay');
         overlay.classList.remove('opacity-0', 'pointer-events-none', 'scale-95');
         overlay.classList.add('opacity-100', 'pointer-events-auto', 'scale-100');
+
+        // 스프레드시트 랭킹 기록 등록
+        submitScoreToSheet();
       }
     }
 
@@ -826,19 +826,14 @@
       }
     }
 
-    // Restart Current Board
     function restartLevel() {
-      playSound('reset');
       closeWinOverlay();
       clearHint();
       moves = 0;
       document.getElementById('move-count').textContent = moves;
       board = initialBoard.map(row => [...row]);
-
-      // Reset hints on retry
       remainingHints = (size === 3) ? Infinity : 3;
       updateHintButtonUI();
-
       renderBoard();
       startTimer();
       isGameActive = true;
@@ -852,55 +847,28 @@
       }
     }
 
-    // Update Hint button label, remaining count, and disabled state
     function updateHintButtonUI() {
       const hintBtn = document.getElementById('btn-hint');
       const hintMain = document.getElementById('hint-btn-main');
-      const hintSub = document.getElementById('hint-btn-sub');
-      if (!hintBtn || !hintMain || !hintSub) return;
+      if (!hintBtn || !hintMain) return;
 
       if (size === 3) {
         hintBtn.disabled = false;
         hintMain.textContent = '힌트 (무제한)';
-        if (currentLang === 'ko') {
-          hintSub.textContent = '';
-          hintSub.style.display = 'none';
-        } else {
-          hintSub.style.display = '';
-          if (currentLang === 'en') hintSub.textContent = 'Hint (Unlimited)';
-          else if (currentLang === 'zh') hintSub.textContent = '提示 (无限)';
-          else if (currentLang === 'ru') hintSub.textContent = 'Подсказка (∞)';
-        }
       } else {
         hintBtn.disabled = (remainingHints <= 0);
         hintMain.textContent = `힌트 (${remainingHints}/3)`;
-        if (currentLang === 'ko') {
-          hintSub.textContent = '';
-          hintSub.style.display = 'none';
-        } else {
-          hintSub.style.display = '';
-          if (currentLang === 'en') hintSub.textContent = `Hint (${remainingHints}/3 left)`;
-          else if (currentLang === 'zh') hintSub.textContent = `提示 (剩${remainingHints}/3)`;
-          else if (currentLang === 'ru') hintSub.textContent = `Подсказка (${remainingHints}/3)`;
-        }
       }
     }
 
-    // Hint feature
     function giveHint() {
       if (!isGameActive) return;
-
-      // Check limit for intermediate/advanced
-      if (size > 3 && remainingHints <= 0) {
-        return;
-      }
+      if (size > 3 && remainingHints <= 0) return;
 
       const candidates = [];
       for (let r = 0; r < size; r++) {
         for (let c = 0; c < size; c++) {
-          if (solutionClicks[r][c]) {
-            candidates.push({ r, c });
-          }
+          if (solutionClicks[r][c]) candidates.push({ r, c });
         }
       }
 
@@ -920,21 +888,11 @@
       buttons.forEach(btn => {
         const r = parseInt(btn.dataset.row);
         const c = parseInt(btn.dataset.col);
-        if (r === hint.r && c === hint.c) {
-          btn.classList.add('light-hint');
-        } else {
-          btn.classList.remove('light-hint');
-        }
+        if (r === hint.r && c === hint.c) btn.classList.add('light-hint');
+        else btn.classList.remove('light-hint');
       });
 
-      let hintMsg = `💡 추천: (${hint.r + 1}행, ${hint.c + 1}열) 칸을 클릭해보세요!`;
-      if (size > 3) {
-        hintMsg += ` [남은 힌트: ${remainingHints}회]`;
-      }
-      if (currentLang !== 'ko' && translations[currentLang]) {
-        hintMsg += ` / ${translations[currentLang].hint_text(hint.r + 1, hint.c + 1)}`;
-      }
-      banner.textContent = hintMsg;
+      banner.textContent = `💡 추천: (${hint.r + 1}행, ${hint.c + 1}열) 칸을 클릭해보세요!`;
     }
 
     function clearHint() {
@@ -943,14 +901,12 @@
       document.querySelectorAll('#game-board button').forEach(btn => btn.classList.remove('light-hint'));
     }
 
-    // LocalStorage Scores
     function getStorageKey() {
       return `lightsout_best_${size}x${size}_stage_${currentStage}`;
     }
 
     function loadBestScore() {
-      const key = getStorageKey();
-      const best = localStorage.getItem(key);
+      const best = localStorage.getItem(getStorageKey());
       document.getElementById('best-score').textContent = best ? `${best}회` : '-';
     }
 
@@ -963,7 +919,6 @@
       }
     }
 
-    // How to Play Modal
     function openHowToModal() {
       const modal = document.getElementById('howto-modal');
       modal.classList.remove('opacity-0', 'pointer-events-none');
@@ -976,7 +931,6 @@
       modal.classList.remove('opacity-100', 'pointer-events-auto');
     }
 
-    // Student Authentication & Identification Handlers
     function checkStudentLogin() {
       const savedStudent = localStorage.getItem('gwansan_student_info');
       const loginModal = document.getElementById('login-modal');
@@ -997,17 +951,13 @@
       event.preventDefault();
       const idInput = document.getElementById('input-student-id').value.trim();
       const nameInput = document.getElementById('input-student-name').value.trim();
-      const errorMsg = document.getElementById('login-error-msg');
-
-      if (!idInput || !nameInput) {
-        errorMsg.textContent = '학번과 이름을 모두 입력해주세요.';
-        return;
-      }
+      if (!idInput || !nameInput) return;
 
       studentInfo = { id: idInput, name: nameInput };
       localStorage.setItem('gwansan_student_info', JSON.stringify(studentInfo));
       updateStudentUI();
       document.getElementById('login-modal').classList.add('hidden');
+      fetchLeaderboard();
     }
 
     function updateStudentUI() {
@@ -1018,19 +968,22 @@
     }
 
     function changeStudentInfo() {
-      const idInput = document.getElementById('input-student-id');
-      const nameInput = document.getElementById('input-student-name');
-      const errorMsg = document.getElementById('login-error-msg');
-      if (idInput) idInput.value = studentInfo.id || '';
-      if (nameInput) nameInput.value = studentInfo.name || '';
-      if (errorMsg) errorMsg.textContent = '';
+      document.getElementById('input-student-id').value = studentInfo.id || '';
+      document.getElementById('input-student-name').value = studentInfo.name || '';
       document.getElementById('login-modal').classList.remove('hidden');
     }
 
-    // Init on Window Load
+    function setLang(lang) {
+      currentLang = lang;
+      ['ko', 'en', 'zh', 'ru'].forEach(l => {
+        const btn = document.getElementById(`lang-${l}`);
+        btn.className = (l === lang) ? "px-2.5 py-1 text-xs rounded-lg font-bold bg-cyan-500 text-slate-950" : "px-2.5 py-1 text-xs rounded-lg font-bold text-slate-400 hover:bg-slate-800";
+      });
+    }
+
     window.onload = function() {
       checkStudentLogin();
-      setLang('en');
+      setLang('ko');
       changeDifficulty(3);
     };
   </script>
